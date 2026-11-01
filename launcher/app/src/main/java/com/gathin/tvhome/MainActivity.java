@@ -133,6 +133,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView prayerRow;
     private String prayerZone;
     private boolean prayerRefreshRunning;
+    /** The greeting and the weather above the clock (Greeting, Weather); each hidden while its theme key is off. */
+    private TextView greetingText, weatherText;
+    private String greetingName = "";
+    private boolean weatherOn;
+    private double latitude, longitude;
+    private boolean weatherRefreshRunning;
     /** The azan over Home at prayer times; null when the theme turns it off or has no prayer_zone. */
     private Azan azan;
     private boolean azanReducedMotion;
@@ -241,6 +247,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         @Override
         public void run() {
             updateShamsiDate();
+            updateGreeting();
+            updateWeather();
             updatePrayerTimes();
             checkAzan();
             updateWifiLabel();
@@ -320,6 +328,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             date.setPadding(0, (int) (4 * density), 0, 0);
         }
         prayerRow = findViewById(R.id.prayerRow);
+        greetingText = findViewById(R.id.greeting);
+        weatherText = findViewById(R.id.weatherText);
+        greetingName = cfg.greetingName;
+        weatherOn = cfg.weather;
+        latitude = cfg.latitude;
+        longitude = cfg.longitude;
+        findViewById(R.id.greetingRow).setVisibility(!greetingName.isEmpty() || weatherOn ? View.VISIBLE : View.GONE);
         prayerZone = cfg.prayerZone;
         if (cfg.azan && !prayerZone.isEmpty()) {
             azan = new Azan(root, () -> {
@@ -698,6 +713,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         resuming = true;
         reloadApps(true);
         updateShamsiDate();
+        updateGreeting();
+        updateWeather();
         updatePrayerTimes();
         Azan.homeResumed = true;
         checkAzan();
@@ -1574,6 +1591,42 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         b.setSpan(new android.text.style.ForegroundColorSpan(bright), start, b.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         prayerRow.setText(b);
         prayerRow.setVisibility(View.VISIBLE);
+    }
+
+    /** "Selamat pagi, Cipta Family" above the clock, by the hour; hidden while greeting_name is empty. */
+    private void updateGreeting() {
+        if (greetingName.isEmpty()) {
+            greetingText.setVisibility(View.GONE);
+            return;
+        }
+        greetingText.setText(Greeting.text(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), greetingName));
+        greetingText.setVisibility(View.VISIBLE);
+    }
+
+    /** "29° Berawan sebagian" beside the greeting; fetches in the background when the reading is old. */
+    private void updateWeather() {
+        if (!weatherOn) {
+            weatherText.setVisibility(View.GONE);
+            return;
+        }
+        Weather.Now w = Weather.recent(this);
+        if (w != null) {
+            weatherText.setText(Weather.line(w));
+            weatherText.setVisibility(View.VISIBLE);
+        } else {
+            weatherText.setVisibility(View.GONE);
+        }
+        if (!weatherRefreshRunning && Weather.due(this)) {
+            weatherRefreshRunning = true;
+            final double lat = latitude, lng = longitude;
+            new Thread(() -> {
+                boolean ok = Weather.refresh(getApplicationContext(), lat, lng);
+                handler.post(() -> {
+                    weatherRefreshRunning = false;
+                    if (ok && !isDestroyed()) updateWeather();
+                });
+            }, "weather").start();
+        }
     }
 
     /** Shows the Wi-Fi network name on the button when we can read it, otherwise the connection type. */

@@ -66,6 +66,13 @@ final class Config {
     final int cacheCleanDays;
     /** JAKIM e-Solat zone for the prayer times under the clock ("TRG04"); empty hides them. */
     final String prayerZone;
+    /** Name after the greeting above the clock ("Cipta Family"); empty hides the greeting. */
+    final String greetingName;
+    /** The weather line above the clock (Weather); off unless a theme turns it on. */
+    final boolean weather;
+    /** Where the weather and the Indonesian prayer times (prayer_zone "ID") are for; Tanjungpinang unless a theme says otherwise. */
+    final double latitude;
+    final double longitude;
     /** The azan screen (and azan.mp3, if the theme has one) at each prayer time; needs prayerZone. */
     final boolean azan;
     /** The theme's mosque photos (Masjid) behind Home instead of the week's places, when it has them. */
@@ -82,7 +89,8 @@ final class Config {
                    boolean showHomeSettingsShortcut, boolean showNetworkPill, boolean showLiveTv,
                    int backgroundColor,
                    File wallpaper, List<File> wallpapers, long wallpaperIntervalMs,
-                   boolean places, int cacheCleanDays, String prayerZone, boolean azan, boolean masjidHome, boolean azanOverlay, boolean overlayApplied) {
+                   boolean places, int cacheCleanDays, String prayerZone, boolean azan, boolean masjidHome, boolean azanOverlay,
+                   String greetingName, boolean weather, double latitude, double longitude, boolean overlayApplied) {
         this.dockApps = Collections.unmodifiableList(dockApps);
         this.hiddenApps = Collections.unmodifiableList(hiddenApps);
         this.liveTvPackage = liveTvPackage;
@@ -106,6 +114,10 @@ final class Config {
         this.places = places;
         this.cacheCleanDays = cacheCleanDays;
         this.prayerZone = prayerZone;
+        this.greetingName = greetingName;
+        this.weather = weather;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.azan = azan;
         this.masjidHome = masjidHome;
         this.azanOverlay = azanOverlay;
@@ -138,6 +150,9 @@ final class Config {
         String prayerZone = res.getString(R.string.prayer_zone).trim();
         boolean azan = res.getBoolean(R.bool.azan);
         boolean masjidHome = true;
+        String greetingName = "";
+        boolean weather = false;
+        double latitude = 0.9186, longitude = 104.4558;   // Tanjungpinang
         boolean azanOverlay = true;
         int background = 0xFF000000;
         boolean applied = false;
@@ -165,6 +180,10 @@ final class Config {
             liveTvRow = bool(json, "show_live_tv", liveTvRow);
             prayerZone = string(json, "prayer_zone", prayerZone);
             azan = bool(json, "azan", azan);
+            greetingName = string(json, "greeting_name", greetingName);
+            weather = bool(json, "weather", weather);
+            latitude = real(json, "latitude", latitude, -90, 90);
+            longitude = real(json, "longitude", longitude, -180, 180);
             masjidHome = bool(json, "masjid_home", masjidHome);
             azanOverlay = bool(json, "azan_over_apps", azanOverlay);
             background = color(json, "background_color", background);
@@ -194,7 +213,8 @@ final class Config {
         return new Config(dock, hidden, liveTv, liveTvAction, panelService, panelAction, inputAction,
                 Math.max(1, columns), Math.max(0, rowsBelow), shamsi, moduleCards, reducedMotion,
                 vpn, homeSettings, networkPill, liveTvRow, background, wallpaper, wallpapers, wallpaperIntervalMs,
-                places, cacheCleanDays, prayerZone.toUpperCase(java.util.Locale.ROOT), azan, masjidHome, azanOverlay, applied);
+                places, cacheCleanDays, prayerZone.toUpperCase(java.util.Locale.ROOT), azan, masjidHome, azanOverlay,
+                greetingName, weather, latitude, longitude, applied);
     }
 
     /** Reads and parses the overlay; any problem means "no overlay", never a crash on the home screen. */
@@ -225,6 +245,13 @@ final class Config {
     private static boolean bool(JSONObject o, String key, boolean fallback) {
         Object v = o.opt(key);
         return v instanceof Boolean ? (Boolean) v : fallback;
+    }
+
+    private static double real(JSONObject o, String key, double fallback, double min, double max) {
+        Object v = o.opt(key);
+        if (!(v instanceof Number)) return fallback;
+        double d = ((Number) v).doubleValue();
+        return d < min || d > max ? fallback : d;
     }
 
     private static int integer(JSONObject o, String key, int fallback, int min, int max) {

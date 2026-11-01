@@ -93,6 +93,49 @@
                 <!-- The header texts use gravity left, not start: the launcher lays out left to right
                      (no supportsRtl), and with start a right-to-left script such as Arabic would move to the
                      right edge of these full-width lines instead of staying under the clock. -->
+                <!-- Greeting ("Selamat pagi, Cipta Family") and the weather, one line above the clock;
+                     the whole row stays gone unless a theme sets greeting_name or weather. -->
+                <LinearLayout
+                    android:id="@+id/greetingRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="-6dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/greeting"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="left"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#E6FFFFFF"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/outfit"
+                        android:fontVariationSettings="'wght' 400"
+                        android:letterSpacing="0.02"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/weatherText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="18dp"
+                        android:gravity="left"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@font/outfit"
+                        android:fontVariationSettings="'wght' 400"
+                        android:letterSpacing="0.02"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
+                </LinearLayout>
+
                 <!-- The clock keeps the place it had under the greeting that used to sit above it. -->
                 <LinearLayout
                     android:layout_width="match_parent"
